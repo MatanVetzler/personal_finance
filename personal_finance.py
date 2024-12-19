@@ -8,29 +8,105 @@ import os
 # Page configuration
 st.set_page_config(layout="wide", page_title="Finance Dashboard", page_icon="💰")
 
-# CSS Styling
+# Enhanced CSS Styling with mobile-friendly dark theme
 st.markdown("""
     <style>
+    /* Global styles */
     .main {
-        background-color: #0e1117;
-        color: #ffffff;
+        background-color: #0e1117 !important;
+        color: #ffffff !important;
     }
+
+    /* Make sure all text is white */
+    .stMarkdown, .stText, .stTitle, .stHeader, .stSubheader, 
+    .stDataFrame, .stNumber, .stSelectbox, .stNumberInput {
+        color: #ffffff !important;
+    }
+
+    /* Style metrics */
     .stMetric {
-        background-color: #1e1e1e;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin: 0.5rem 0;
+        background-color: #1e1e1e !important;
+        padding: 1rem !important;
+        border-radius: 0.5rem !important;
+        margin: 0.5rem 0 !important;
+        border: 1px solid #2d2d2d !important;
     }
+
+    /* Metric value styling */
     [data-testid="stMetricValue"] {
         font-size: 1.2rem !important;
+        color: #ffffff !important;
     }
-    .row-widget.stButton {
-        text-align: right;
+
+    /* Metric label styling */
+    [data-testid="stMetricLabel"] {
+        color: #cccccc !important;
     }
+
+    /* Style buttons */
+    .stButton button {
+        background-color: #262730 !important;
+        color: #ffffff !important;
+        border: 1px solid #404040 !important;
+    }
+
+    .stButton button:hover {
+        border-color: #00ff88 !important;
+    }
+
+    /* Style expander */
     div[data-testid="stExpander"] {
-        background-color: #1e1e1e;
-        border-radius: 0.5rem;
-        margin: 0.5rem 0;
+        background-color: #1e1e1e !important;
+        border-radius: 0.5rem !important;
+        margin: 0.5rem 0 !important;
+        border: 1px solid #2d2d2d !important;
+    }
+
+    /* Style form inputs */
+    .stTextInput input, .stNumberInput input, .stSelectbox select {
+        background-color: #262730 !important;
+        color: #ffffff !important;
+        border: 1px solid #404040 !important;
+    }
+
+    /* Style dataframe */
+    .stDataFrame {
+        background-color: #1e1e1e !important;
+    }
+
+    .dataframe {
+        background-color: #262730 !important;
+        color: #ffffff !important;
+    }
+
+    /* Style slider */
+    .stSlider {
+        color: #ffffff !important;
+    }
+
+    [data-testid="stThumbValue"] {
+        color: #ffffff !important;
+    }
+
+    /* Style tooltips */
+    .tooltip {
+        background-color: #1e1e1e !important;
+        color: #ffffff !important;
+    }
+
+    /* Mobile-specific adjustments */
+    @media (max-width: 768px) {
+        .stMetric {
+            padding: 0.75rem !important;
+        }
+
+        [data-testid="stMetricValue"] {
+            font-size: 1rem !important;
+        }
+
+        .main .block-container {
+            padding: 1rem !important;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -228,3 +304,231 @@ with col_projection:
 if not st.session_state.data.empty:
     with st.expander("📋 View Full Data Table"):
         st.dataframe(st.session_state.data, use_container_width=True)
+
+st.markdown("---")
+st.header("📊 Financial Analytics")
+
+if not st.session_state.data.empty:
+    # Prepare data
+    df = st.session_state.data.copy()
+    df['Date'] = pd.to_datetime(df.apply(lambda x: f"{x['Month']} {x['Year']}", axis=1))
+    df = df.sort_values('Date')
+
+    # Format dates for display
+    df['Display_Date'] = df['Date'].dt.strftime('%b %Y')
+
+    # 1. Income vs Expenses Breakdown
+    st.subheader("Income vs Expenses Over Time")
+    st.markdown(
+        '<p style="font-size: 0.9em; color: #888888;">Shows your total monthly income (green) versus expenses (red), helping you track your spending relative to earnings.</p>',
+        unsafe_allow_html=True)
+
+    total_expenses = df['Expenses Day-to-day'] + df['Expenses rent'] + df['Expenses loan'] + \
+                     df['Expenses market'] + df['Expenses taxes'] + df['Expenses mortgage']
+    total_income = df['Income Salary'] + df['Income plus']
+
+    fig_income_expenses = go.Figure()
+
+    fig_income_expenses.add_trace(go.Scatter(
+        x=df['Display_Date'],
+        y=total_income,
+        name='Total Income',
+        line=dict(color='#00ff88', width=2),
+        fill='tonexty'
+    ))
+
+    fig_income_expenses.add_trace(go.Scatter(
+        x=df['Display_Date'],
+        y=total_expenses,
+        name='Total Expenses',
+        line=dict(color='#ff4444', width=2),
+        fill='tonexty'
+    ))
+
+    fig_income_expenses.update_layout(
+        template='plotly_dark',
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin=dict(l=20, r=20, t=30, b=20),
+        height=400,
+        yaxis_title="Amount (₪)",
+        hovermode='x unified',
+        xaxis_title=None
+    )
+
+    st.plotly_chart(fig_income_expenses, use_container_width=True)
+
+    # 2. Expense Categories Breakdown
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("Expense Distribution")
+        st.markdown(
+            '<p style="font-size: 0.9em; color: #888888;">Breakdown of your total expenses by category, showing where most of your money goes.</p>',
+            unsafe_allow_html=True)
+
+        expense_categories = {
+            'Day-to-day': df['Expenses Day-to-day'].sum(),
+            'Rent': df['Expenses rent'].sum(),
+            'Loan': df['Expenses loan'].sum(),
+            'Market Investment': df['Expenses market'].sum(),
+            'Taxes': df['Expenses taxes'].sum(),
+            'Mortgage': df['Expenses mortgage'].sum()
+        }
+
+        fig_pie = go.Figure(data=[go.Pie(
+            labels=list(expense_categories.keys()),
+            values=list(expense_categories.values()),
+            hole=0.4,
+            marker=dict(colors=['#00ff88', '#00cc88', '#008866', '#ff4444', '#cc4444', '#884444'])
+        )])
+
+        fig_pie.update_layout(
+            template='plotly_dark',
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=20, r=20, t=30, b=20),
+            height=400,
+            showlegend=True
+        )
+
+        st.plotly_chart(fig_pie, use_container_width=True)
+
+    with col2:
+        st.subheader("Monthly Savings Rate")
+        st.markdown(
+            '<p style="font-size: 0.9em; color: #888888;">Your monthly savings as a percentage of income, with dashed line showing the average rate.</p>',
+            unsafe_allow_html=True)
+
+        savings_rate = (df['Monthly left'] / total_income * 100).round(2)
+
+        fig_savings = go.Figure()
+
+        fig_savings.add_trace(go.Scatter(
+            x=df['Display_Date'],
+            y=savings_rate,
+            mode='lines+markers',
+            name='Savings Rate',
+            line=dict(color='#00ff88', width=2),
+            marker=dict(size=8)
+        ))
+
+        fig_savings.add_hline(
+            y=savings_rate.mean(),
+            line_dash="dash",
+            line_color="white",
+            annotation_text=f"Average: {savings_rate.mean():.1f}%"
+        )
+
+        fig_savings.update_layout(
+            template='plotly_dark',
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=20, r=20, t=30, b=20),
+            height=400,
+            yaxis_title="Savings Rate (%)",
+            yaxis_range=[0, max(100, savings_rate.max() * 1.1)],
+            xaxis_title=None
+        )
+
+        st.plotly_chart(fig_savings, use_container_width=True)
+
+    # 3. Monthly Investment Growth
+    st.subheader("Investment Contributions Over Time")
+    st.markdown(
+        '<p style="font-size: 0.9em; color: #888888;">Monthly investment amounts (bars) and cumulative total invested (white line) over time.</p>',
+        unsafe_allow_html=True)
+
+    fig_investment = go.Figure()
+
+    fig_investment.add_trace(go.Bar(
+        x=df['Display_Date'],
+        y=df['Expenses market'],
+        name='Monthly Investment',
+        marker_color='#00ff88'
+    ))
+
+    fig_investment.add_trace(go.Scatter(
+        x=df['Display_Date'],
+        y=df['Expenses market'].cumsum(),
+        name='Cumulative Investment',
+        line=dict(color='white', width=2),
+        yaxis='y2'
+    ))
+
+    fig_investment.update_layout(
+        template='plotly_dark',
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin=dict(l=20, r=20, t=30, b=20),
+        height=400,
+        yaxis_title="Monthly Investment (₪)",
+        yaxis2=dict(
+            title="Cumulative Investment (₪)",
+            overlaying='y',
+            side='right'
+        ),
+        showlegend=True,
+        hovermode='x unified',
+        xaxis_title=None
+    )
+
+    st.plotly_chart(fig_investment, use_container_width=True)
+
+    # 4. Key Metrics
+    st.subheader("Key Financial Metrics")
+    st.markdown('''
+            <p style="font-size: 0.9em; color: #888888;">
+            Summary of important financial indicators and their trends:
+            <br>• <b>Avg Monthly Savings</b>: Your average money left after all expenses each month. The delta shows how your latest month compares to this average.
+            <br>• <b>Avg Savings Rate</b>: The percentage of your income you typically save each month. The delta indicates if your latest month's savings rate was above or below average.
+            <br>• <b>Expense Efficiency</b>: The ratio of essential expenses (rent, mortgage, loan) to discretionary spending (day-to-day). Lower is better, indicating more controlled daily spending.
+            <br>• <b>Monthly Investment Ratio</b>: Your average monthly investment as a percentage of monthly income. Shows investment consistency relative to earnings.
+            </p>
+            ''', unsafe_allow_html=True)
+
+    metrics_col1, metrics_col2, metrics_col3, metrics_col4 = st.columns(4)
+
+    with metrics_col1:
+        average_savings = df['Monthly left'].mean()
+        st.metric(
+            "Avg Monthly Savings",
+            f"₪{average_savings:,.2f}",
+            delta=f"₪{df['Monthly left'].iloc[-1] - average_savings:,.2f} vs avg"
+        )
+
+    with metrics_col2:
+        avg_savings_rate = savings_rate.mean()
+        st.metric(
+            "Avg Savings Rate",
+            f"{avg_savings_rate:.1f}%",
+            delta=f"{savings_rate.iloc[-1] - avg_savings_rate:.1f}% vs avg"
+        )
+
+    with metrics_col3:
+        # Calculate essential vs discretionary spending ratio
+        essential_expenses = df['Expenses rent'] + df['Expenses mortgage'] + df['Expenses loan']
+        discretionary_expenses = df['Expenses Day-to-day']
+        expense_ratio = (essential_expenses / discretionary_expenses).mean()
+        current_ratio = (essential_expenses.iloc[-1] / discretionary_expenses.iloc[-1])
+
+        st.metric(
+            "Expense Efficiency",
+            f"{expense_ratio:.2f}",
+            delta=f"{current_ratio - expense_ratio:.2f} vs avg",
+            delta_color="inverse"  # Lower is better for this metric
+        )
+
+    with metrics_col4:
+        # Calculate average monthly investment ratio
+        monthly_investment_ratios = (df['Expenses market'] / (df['Income Salary'] + df['Income plus']) * 100)
+        avg_monthly_investment_ratio = monthly_investment_ratios.mean()
+        current_investment_ratio = monthly_investment_ratios.iloc[-1]
+
+        st.metric(
+            "Monthly Investment Ratio",
+            f"{avg_monthly_investment_ratio:.1f}%",
+            delta=f"{current_investment_ratio - avg_monthly_investment_ratio:.1f}% vs avg"
+        )
+else:
+    st.info("Add some financial data to see the analytics!")
