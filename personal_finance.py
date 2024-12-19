@@ -8,83 +8,101 @@ import os
 # Page configuration
 st.set_page_config(layout="wide", page_title="Finance Dashboard", page_icon="💰")
 
-# Enhanced CSS Styling with mobile-friendly dark theme
+# Enhanced CSS Styling with enforced dark theme
 st.markdown("""
     <style>
-    /* Global styles */
-    .main {
+    /* Force dark theme */
+    [data-testid="stAppViewContainer"], 
+    [data-testid="stHeader"],
+    section[data-testid="stSidebar"],
+    [data-testid="stToolbar"] {
         background-color: #0e1117 !important;
         color: #ffffff !important;
     }
 
-    /* Make sure all text is white */
-    .stMarkdown, .stText, .stTitle, .stHeader, .stSubheader, 
-    .stDataFrame, .stNumber, .stSelectbox, .stNumberInput {
+    /* Headers */
+    h1, h2, h3, h4, h5, h6, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+    }
+
+    /* Ensure dark theme for all text elements */
+    p, span, div, label, .stMarkdown p {
         color: #ffffff !important;
     }
 
-    /* Style metrics */
-    .stMetric {
+    /* Style metrics containers */
+    [data-testid="stMetric"] {
         background-color: #1e1e1e !important;
         padding: 1rem !important;
         border-radius: 0.5rem !important;
-        margin: 0.5rem 0 !important;
         border: 1px solid #2d2d2d !important;
     }
 
-    /* Metric value styling */
+    /* Style metric values and labels */
     [data-testid="stMetricValue"] {
-        font-size: 1.2rem !important;
         color: #ffffff !important;
+        font-size: 1.2rem !important;
     }
 
-    /* Metric label styling */
+    [data-testid="stMetricDelta"] {
+        color: #00ff88 !important;
+    }
+
     [data-testid="stMetricLabel"] {
         color: #cccccc !important;
     }
 
-    /* Style buttons */
-    .stButton button {
+    /* Style buttons consistently */
+    button, [data-testid="baseButton-secondary"] {
         background-color: #262730 !important;
         color: #ffffff !important;
         border: 1px solid #404040 !important;
     }
 
-    .stButton button:hover {
+    button:hover {
         border-color: #00ff88 !important;
     }
 
-    /* Style expander */
-    div[data-testid="stExpander"] {
+    /* Style expanders */
+    [data-testid="stExpander"] {
         background-color: #1e1e1e !important;
         border-radius: 0.5rem !important;
-        margin: 0.5rem 0 !important;
         border: 1px solid #2d2d2d !important;
     }
 
-    /* Style form inputs */
-    .stTextInput input, .stNumberInput input, .stSelectbox select {
+    /* Form inputs */
+    input, .stTextInput > div > div > input,
+    .stNumberInput > div > div > input,
+    .stSelectbox > div > div > select {
         background-color: #262730 !important;
         color: #ffffff !important;
-        border: 1px solid #404040 !important;
+        border-color: #404040 !important;
     }
 
-    /* Style dataframe */
-    .stDataFrame {
-        background-color: #1e1e1e !important;
+    /* Selectbox */
+    .stSelectbox > div > div::before {
+        background-color: #262730 !important;
     }
 
+    /* Dataframe styling */
     .dataframe {
+        background-color: #1e1e1e !important;
+        color: #ffffff !important;
+    }
+
+    .dataframe th {
         background-color: #262730 !important;
         color: #ffffff !important;
     }
 
-    /* Style slider */
-    .stSlider {
+    .dataframe td {
+        background-color: #1e1e1e !important;
         color: #ffffff !important;
     }
 
-    [data-testid="stThumbValue"] {
+    /* Force white text for all markdown */
+    .stMarkdown {
         color: #ffffff !important;
     }
 
@@ -92,6 +110,24 @@ st.markdown("""
     .tooltip {
         background-color: #1e1e1e !important;
         color: #ffffff !important;
+    }
+
+    /* Override any Streamlit defaults */
+    .stApp {
+        background-color: #0e1117 !important;
+    }
+
+    .streamlit-expanderHeader {
+        color: #ffffff !important;
+    }
+
+    /* Sidebar */
+    [data-testid="stSidebarNav"] {
+        background-color: #0e1117 !important;
+    }
+
+    [data-testid="stSidebarNav"] li {
+        background-color: #1e1e1e !important;
     }
 
     /* Mobile-specific adjustments */
