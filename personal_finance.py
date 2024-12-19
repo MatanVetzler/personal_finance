@@ -8,10 +8,43 @@ import os
 # Page configuration
 st.set_page_config(layout="wide", page_title="Finance Dashboard", page_icon="💰")
 
+# Enhanced CSS Styling with enforced dark theme
 st.markdown("""
     <style>
-    /* Previous styles remain... */
+    /* Force dark theme */
+    [data-testid="stAppViewContainer"], 
+    [data-testid="stHeader"],
+    section[data-testid="stSidebar"],
+    [data-testid="stToolbar"] {
+        background-color: #0e1117 !important;
+        color: #ffffff !important;
+    }
 
+    /* Headers */
+    h1, h2, h3, h4, h5, h6, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+    }
+
+    /* Ensure dark theme for all text elements */
+    p, span, div, label, .stMarkdown p {
+        color: #ffffff !important;
+    }
+
+    /* Style metrics containers */
+    [data-testid="stMetric"] {
+        background-color: #1e1e1e !important;
+        padding: 1rem !important;
+        border-radius: 0.5rem !important;
+        border: 1px solid #2d2d2d !important;
+    }
+
+    /* Style metric values and labels */
+    [data-testid="stMetricValue"] {
+        color: #ffffff !important;
+        font-size: 1.2rem !important;
+    }
+    
     /* Enhanced Select/Dropdown styling */
     select,
     .stSelectbox > div > div > select,
@@ -21,7 +54,7 @@ st.markdown("""
         color: #ffffff !important;
         border-color: #404040 !important;
     }
-
+    
     /* Style the dropdown options */
     select option,
     .stSelectbox option {
@@ -29,40 +62,105 @@ st.markdown("""
         color: #ffffff !important;
     }
 
-    /* Style the select container */
-    div[data-baseweb="select"] {
+    [data-testid="stMetricDelta"] {
+        color: #00ff88 !important;
+    }
+
+    [data-testid="stMetricLabel"] {
+        color: #cccccc !important;
+    }
+
+    /* Style buttons consistently */
+    button, [data-testid="baseButton-secondary"] {
+        background-color: #262730 !important;
+        color: #ffffff !important;
+        border: 1px solid #404040 !important;
+    }
+
+    button:hover {
+        border-color: #00ff88 !important;
+    }
+
+    /* Style expanders */
+    [data-testid="stExpander"] {
+        background-color: #1e1e1e !important;
+        border-radius: 0.5rem !important;
+        border: 1px solid #2d2d2d !important;
+    }
+
+    /* Form inputs */
+    input, .stTextInput > div > div > input,
+    .stNumberInput > div > div > input,
+    .stSelectbox > div > div > select {
+        background-color: #262730 !important;
+        color: #ffffff !important;
+        border-color: #404040 !important;
+    }
+
+    /* Selectbox */
+    .stSelectbox > div > div::before {
         background-color: #262730 !important;
     }
 
-    /* Style the select popup */
-    div[role="listbox"] {
-        background-color: #262730 !important;
+    /* Dataframe styling */
+    .dataframe {
+        background-color: #1e1e1e !important;
+        color: #ffffff !important;
     }
 
-    /* Style individual dropdown items */
-    div[role="option"] {
+    .dataframe th {
         background-color: #262730 !important;
         color: #ffffff !important;
     }
 
-    /* Style dropdown hover state */
-    div[role="option"]:hover {
-        background-color: #404040 !important;
-    }
-
-    /* Style selected option */
-    div[aria-selected="true"] {
-        background-color: #404040 !important;
+    .dataframe td {
+        background-color: #1e1e1e !important;
         color: #ffffff !important;
     }
 
-    /* Fix for white background in dropdowns */
-    .stSelectbox > div,
-    .stSelectbox > div > div {
-        background-color: #262730 !important;
+    /* Force white text for all markdown */
+    .stMarkdown {
+        color: #ffffff !important;
     }
 
-    /* [Previous CSS styles remain the same...] */
+    /* Style tooltips */
+    .tooltip {
+        background-color: #1e1e1e !important;
+        color: #ffffff !important;
+    }
+
+    /* Override any Streamlit defaults */
+    .stApp {
+        background-color: #0e1117 !important;
+    }
+
+    .streamlit-expanderHeader {
+        color: #ffffff !important;
+    }
+
+    /* Sidebar */
+    [data-testid="stSidebarNav"] {
+        background-color: #0e1117 !important;
+    }
+
+    [data-testid="stSidebarNav"] li {
+        background-color: #1e1e1e !important;
+    }
+
+    /* Mobile-specific adjustments */
+    @media (max-width: 768px) {
+        .stMetric {
+            padding: 0.75rem !important;
+        }
+
+        [data-testid="stMetricValue"] {
+            font-size: 1rem !important;
+        }
+
+        .main .block-container {
+            padding: 1rem !important;
+        }
+    }
     </style>
 """, unsafe_allow_html=True)
 
