@@ -8,7 +8,7 @@ import os
 # Page configuration
 st.set_page_config(layout="wide", page_title="Finance Dashboard", page_icon="💰")
 
-# Enhanced CSS Styling with enforced dark theme
+# Enhanced CSS Styling with enforced dark theme and mobile fixes
 st.markdown("""
     <style>
     /* Force dark theme */
@@ -31,21 +31,7 @@ st.markdown("""
         color: #ffffff !important;
     }
 
-    /* Style metrics containers */
-    [data-testid="stMetric"] {
-        background-color: #1e1e1e !important;
-        padding: 1rem !important;
-        border-radius: 0.5rem !important;
-        border: 1px solid #2d2d2d !important;
-    }
-
-    /* Style metric values and labels */
-    [data-testid="stMetricValue"] {
-        color: #ffffff !important;
-        font-size: 1.2rem !important;
-    }
-    
-    /* Enhanced Select/Dropdown styling */
+    /* Enhanced Select/Dropdown styling with mobile fixes */
     select,
     .stSelectbox > div > div > select,
     div[data-baseweb="select"] > div,
@@ -54,148 +40,48 @@ st.markdown("""
         color: #ffffff !important;
         border-color: #404040 !important;
     }
-    
-    /* Style the dropdown options */
-    select option,
-    .stSelectbox option {
-        background-color: #262730 !important;
-        color: #ffffff !important;
-    }
-    
-    /* Style the select container */
-    div[data-baseweb="select"] {
-        background-color: #262730 !important;
-    }
-    
-    /* Style the select popup */
-    div[role="listbox"] {
-        background-color: #262730 !important;
-    }
-    
-    /* Style individual dropdown items */
-    div[role="option"] {
-        background-color: #262730 !important;
-        color: #ffffff !important;
-    }
-    
-    /* Style dropdown hover state */
-    div[role="option"]:hover {
-        background-color: #404040 !important;
-    }
-    
-    /* Style selected option */
-    div[aria-selected="true"] {
-        background-color: #404040 !important;
-        color: #ffffff !important;
-    }
-    
-    /* Fix for white background in dropdowns */
-    .stSelectbox > div,
-    .stSelectbox > div > div {
-        background-color: #262730 !important;
-    }
 
-    [data-testid="stMetricDelta"] {
-        color: #00ff88 !important;
-    }
-
-    [data-testid="stMetricLabel"] {
-        color: #cccccc !important;
-    }
-
-    /* Style buttons consistently */
-    button, [data-testid="baseButton-secondary"] {
-        background-color: #262730 !important;
-        color: #ffffff !important;
-        border: 1px solid #404040 !important;
-    }
-
-    button:hover {
-        border-color: #00ff88 !important;
-    }
-
-    /* Style expanders */
-    [data-testid="stExpander"] {
-        background-color: #1e1e1e !important;
-        border-radius: 0.5rem !important;
-        border: 1px solid #2d2d2d !important;
-    }
-
-    /* Form inputs */
-    input, .stTextInput > div > div > input,
-    .stNumberInput > div > div > input,
-    .stSelectbox > div > div > select {
-        background-color: #262730 !important;
-        color: #ffffff !important;
-        border-color: #404040 !important;
-    }
-
-    /* Selectbox */
-    .stSelectbox > div > div::before {
-        background-color: #262730 !important;
-    }
-
-    /* Dataframe styling */
-    .dataframe {
-        background-color: #1e1e1e !important;
-        color: #ffffff !important;
-    }
-
-    .dataframe th {
-        background-color: #262730 !important;
-        color: #ffffff !important;
-    }
-
-    .dataframe td {
-        background-color: #1e1e1e !important;
-        color: #ffffff !important;
-    }
-
-    /* Force white text for all markdown */
-    .stMarkdown {
-        color: #ffffff !important;
-    }
-
-    /* Style tooltips */
-    .tooltip {
-        background-color: #1e1e1e !important;
-        color: #ffffff !important;
-    }
-
-    /* Override any Streamlit defaults */
-    .stApp {
-        background-color: #0e1117 !important;
-    }
-
-    .streamlit-expanderHeader {
-        color: #ffffff !important;
-    }
-
-    /* Sidebar */
-    [data-testid="stSidebarNav"] {
-        background-color: #0e1117 !important;
-    }
-
-    [data-testid="stSidebarNav"] li {
-        background-color: #1e1e1e !important;
-    }
-
-    /* Mobile-specific adjustments */
+    /* Mobile-specific dropdown fixes */
     @media (max-width: 768px) {
-        .stMetric {
-            padding: 0.75rem !important;
+        .stSelectbox > div,
+        .stSelectbox > div > div,
+        select.st-select {
+            background-color: #262730 !important;
+            color: #ffffff !important;
         }
 
-        [data-testid="stMetricValue"] {
-            font-size: 1rem !important;
+        .stSelectbox option {
+            background-color: #262730 !important;
+            color: #ffffff !important;
         }
 
-        .main .block-container {
-            padding: 1rem !important;
+        /* Force white text for dropdown items */
+        select,
+        select option,
+        .stSelectbox select,
+        .stSelectbox option,
+        div[role="listbox"],
+        div[role="option"] {
+            color: #ffffff !important;
+            background-color: #262730 !important;
+        }
+
+        /* Ensure text contrast in dropdowns */
+        .stSelectbox > div[data-baseweb="select"] span {
+            color: #ffffff !important;
         }
     }
+
+    /* Rest of your existing CSS styles... */
     </style>
 """, unsafe_allow_html=True)
+
+# Get current month for default selection
+current_month = datetime.now().strftime("%B")
+months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+]
 
 # File for saving data
 file_path = "finance_data.csv"
@@ -252,10 +138,10 @@ col_input, col_summary, col_projection = st.columns([1.2, 1, 1])
 with col_input:
     with st.expander("📝 Add New Month Data", expanded=True):
         with st.form("add_month_form", clear_on_submit=True):
-            month = st.selectbox("Month", options=[
-                "January", "February", "March", "April", "May", "June",
-                "July", "August", "September", "October", "November", "December"
-            ])
+            # Set current month as default
+            month = st.selectbox("Month",
+                                 options=months,
+                                 index=months.index(current_month))
             current_year = st.number_input("Year", value=datetime.now().year, min_value=2000, max_value=2100)
 
             c1, c2 = st.columns(2)
