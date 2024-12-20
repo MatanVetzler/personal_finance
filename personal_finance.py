@@ -55,21 +55,25 @@ st.markdown("""
         border-color: #404040 !important;
     }
 
-    /* Style the dropdown options */
-    select option,
-    .stSelectbox option {
+    /* Style all dropdown-related elements */
+    div[data-baseweb="popover"] {
+        background-color: #262730 !important;
+    }
+
+    div[data-baseweb="popover"] * {
         background-color: #262730 !important;
         color: #ffffff !important;
     }
 
-    /* Style the select container */
-    div[data-baseweb="select"] {
+    div[data-baseweb="select"] * {
         background-color: #262730 !important;
+        color: #ffffff !important;
     }
 
-    /* Style the select popup */
+    /* Style the dropdown options container */
     div[role="listbox"] {
         background-color: #262730 !important;
+        border: 1px solid #404040 !important;
     }
 
     /* Style individual dropdown items */
@@ -93,6 +97,12 @@ st.markdown("""
     .stSelectbox > div,
     .stSelectbox > div > div {
         background-color: #262730 !important;
+    }
+
+    /* Style the select value container */
+    div[data-baseweb="select"] div[data-testid="stMarkdown"] {
+        background-color: #262730 !important;
+        color: #ffffff !important;
     }
 
     [data-testid="stMetricDelta"] {
