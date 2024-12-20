@@ -228,6 +228,11 @@ if "data" not in st.session_state:
             "Expenses taxes", "Expenses mortgage", "Monthly left"
         ])
 
+if "yearly_return" not in st.session_state:
+    st.session_state.yearly_return = 7  # Default value
+
+def update_yearly_return():
+    st.session_state.yearly_return = st.session_state.yearly_return_slider
 
 def calculate_portfolio_value(df, yearly_return):
     if df.empty:
@@ -336,10 +341,17 @@ with col_summary:
 
     if not st.session_state.data.empty:
         current_bank_account = st.session_state.data["Monthly left"].sum()
-        yearly_return = st.slider("Yearly Stock Return (%)", min_value=0, max_value=20, value=7)
+        yearly_return = st.slider(
+            "Yearly Stock Return (%)",
+            min_value=0,
+            max_value=20,
+            value=st.session_state.yearly_return,
+            key="yearly_return_slider",
+            on_change=update_yearly_return
+        )
 
         current_portfolio, total_invested, portfolio_gains, tax_amount, portfolio_after_tax = \
-            calculate_portfolio_value(st.session_state.data, yearly_return)
+            calculate_portfolio_value(st.session_state.data, st.session_state.yearly_return)
 
         overall_assets = current_bank_account + portfolio_after_tax
 
@@ -350,59 +362,228 @@ with col_summary:
         st.metric("📊 Portfolio After Tax", f"₪{portfolio_after_tax:,.2f}")
         st.metric("🏦 Total Assets", f"₪{overall_assets:,.2f}")
 
+
+def calculate_future_portfolio(
+        current_portfolio,
+        yearly_return,
+        monthly_contribution,
+        years,
+        inflation_rate=2.0
+):
+    """
+    Calculate future portfolio value with more realistic assumptions.
+
+    Parameters:
+    current_portfolio (float): Current portfolio value
+    yearly_return (float): Expected yearly return percentage
+    monthly_contribution (float): Monthly investment amount
+    years (int): Number of years to project
+    inflation_rate (float): Expected yearly inflation rate percentage
+
+    Returns:
+    tuple: (nominal_values, real_values, total_invested)
+    """
+    months = years * 12
+    monthly_rate = (1 + yearly_return / 100) ** (1 / 12) - 1
+    monthly_inflation = (1 + inflation_rate / 100) ** (1 / 12) - 1
+
+    nominal_values = []
+    real_values = []
+    total_invested = current_portfolio
+
+    portfolio_nominal = current_portfolio
+    portfolio_real = current_portfolio
+
+    for _ in range(months):
+        # Add monthly contribution
+        portfolio_nominal += monthly_contribution
+        portfolio_real += monthly_contribution
+
+        # Apply returns
+        portfolio_nominal *= (1 + monthly_rate)
+        portfolio_real *= (1 + monthly_rate)
+
+        # Apply inflation adjustment to real value
+        portfolio_real *= (1 - monthly_inflation)
+
+        total_invested += monthly_contribution
+        nominal_values.append(portfolio_nominal)
+        real_values.append(portfolio_real)
+
+    return nominal_values, real_values, total_invested
+
+
 with col_projection:
-    st.subheader("🔮 Portfolio Projection")
+    st.subheader("🔮 Portfolio Projections")
 
     if not st.session_state.data.empty:
-        years = st.slider("Projection Years", min_value=1, max_value=10, value=5)
-        future_months = pd.date_range(start=datetime.now(), periods=years * 12, freq="M")
-        monthly_rate = (1 + yearly_return / 100) ** (1 / 12) - 1
+        years = st.slider("Projection Years", min_value=1, max_value=30, value=5)
 
-        future_portfolio = [current_portfolio]
-        for _ in range(len(future_months)):
-            future_portfolio.append(future_portfolio[-1] * (1 + monthly_rate))
+        # Tab creation
+        tab1, tab2 = st.tabs(["Simple Projection", "Detailed Projection"])
 
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=future_months,
-            y=future_portfolio[1:],
-            mode='lines',
-            name='Portfolio Value',
-            line=dict(color="#00ff88", width=2)
-        ))
-        fig.update_layout(
-            margin=dict(l=20, r=20, t=30, b=20),
-            height=400,
-            template="plotly_dark",
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white'),
-            showlegend=False,
-            xaxis=dict(
-                showgrid=True,
-                gridcolor='rgba(128,128,128,0.2)',
-                title=None
-            ),
-            yaxis=dict(
-                showgrid=True,
-                gridcolor='rgba(128,128,128,0.2)',
-                title="Portfolio Value (₪)"
+        # Simple Projection (Original)
+        with tab1:
+            st.markdown("##### Current Portfolio Growth")
+            st.caption("Projects current portfolio value without additional contributions")
+
+            future_months = pd.date_range(start=datetime.now(), periods=years * 12, freq="M")
+            monthly_rate = (1 + st.session_state.yearly_return / 100) ** (1 / 12) - 1
+
+            future_portfolio = [current_portfolio]
+            for _ in range(len(future_months)):
+                future_portfolio.append(future_portfolio[-1] * (1 + monthly_rate))
+
+            fig_simple = go.Figure()
+            fig_simple.add_trace(go.Scatter(
+                x=future_months,
+                y=future_portfolio[1:],
+                mode='lines',
+                name='Portfolio Value',
+                line=dict(color="#00ff88", width=2)
+            ))
+            fig_simple.update_layout(
+                margin=dict(l=20, r=20, t=30, b=20),
+                height=400,
+                template="plotly_dark",
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='white'),
+                showlegend=False,
+                xaxis=dict(
+                    showgrid=True,
+                    gridcolor='rgba(128,128,128,0.2)',
+                    title=None
+                ),
+                yaxis=dict(
+                    showgrid=True,
+                    gridcolor='rgba(128,128,128,0.2)',
+                    title="Portfolio Value (₪)"
+                )
             )
-        )
-        st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig_simple, use_container_width=True)
 
-        final_portfolio_value = future_portfolio[-1]
-        final_gains = final_portfolio_value - total_invested
-        final_tax = 0.25 * final_gains if final_gains > 0 else 0
-        final_value_after_tax = final_portfolio_value - final_tax
+            final_portfolio_value = future_portfolio[-1]
+            final_gains = final_portfolio_value - total_invested
+            final_tax = 0.25 * final_gains if final_gains > 0 else 0
+            final_value_after_tax = final_portfolio_value - final_tax
 
-        c1, c2 = st.columns(2)
-        with c1:
-            st.metric("Projected Value", f"₪{final_portfolio_value:,.2f}")
-            st.metric("Projected Tax", f"₪{final_tax:,.2f}")
-        with c2:
-            st.metric("Projected Gains", f"₪{final_gains:,.2f}")
-            st.metric("After Tax Value", f"₪{final_value_after_tax:,.2f}")
+            c1, c2 = st.columns(2)
+            with c1:
+                st.metric("Projected Value", f"₪{final_portfolio_value:,.2f}")
+                st.metric("Projected Tax", f"₪{final_tax:,.2f}")
+            with c2:
+                st.metric("Projected Gains", f"₪{final_gains:,.2f}")
+                st.metric("After Tax Value", f"₪{final_value_after_tax:,.2f}")
+
+        # Detailed Projection (New)
+        with tab2:
+            st.markdown("##### Advanced Portfolio Projection")
+            st.caption("Projects future value including monthly contributions and inflation")
+
+            # Get the average monthly investment from historical data
+            avg_monthly_investment = st.session_state.data['Expenses market'].mean()
+
+            # Additional inputs for detailed projection
+            monthly_contribution = st.number_input(
+                "Monthly Investment (₪)",
+                value=float(avg_monthly_investment),
+                step=100.0,
+                help="Expected monthly contribution to your portfolio"
+            )
+            inflation_rate = st.slider(
+                "Expected Inflation Rate (%)",
+                min_value=0.0,
+                max_value=10.0,
+                value=2.0,
+                step=0.1,
+                help="Average annual inflation rate"
+            )
+
+            # Calculate detailed projections
+            nominal_values, real_values, total_future_invested = calculate_future_portfolio(
+                current_portfolio=current_portfolio,
+                yearly_return=st.session_state.yearly_return,
+                monthly_contribution=monthly_contribution,
+                years=years,
+                inflation_rate=inflation_rate
+            )
+
+            # Create the detailed projection chart
+            fig_detailed = go.Figure()
+
+            fig_detailed.add_trace(go.Scatter(
+                x=future_months,
+                y=nominal_values,
+                mode='lines',
+                name='Nominal Value',
+                line=dict(color="#00ff88", width=2)
+            ))
+
+            fig_detailed.add_trace(go.Scatter(
+                x=future_months,
+                y=real_values,
+                mode='lines',
+                name='Real Value (Inflation Adjusted)',
+                line=dict(color="#88ffcc", width=2, dash='dash')
+            ))
+
+            fig_detailed.update_layout(
+                margin=dict(l=20, r=20, t=30, b=20),
+                height=400,
+                template="plotly_dark",
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='white'),
+                legend=dict(
+                    yanchor="top",
+                    y=0.99,
+                    xanchor="left",
+                    x=0.01
+                ),
+                xaxis=dict(
+                    showgrid=True,
+                    gridcolor='rgba(128,128,128,0.2)',
+                    title=None
+                ),
+                yaxis=dict(
+                    showgrid=True,
+                    gridcolor='rgba(128,128,128,0.2)',
+                    title="Portfolio Value (₪)"
+                )
+            )
+            st.plotly_chart(fig_detailed, use_container_width=True)
+
+            # Calculate and display detailed metrics
+            final_portfolio_nominal = nominal_values[-1]
+            final_portfolio_real = real_values[-1]
+            final_gains = final_portfolio_nominal - total_future_invested
+            final_tax = 0.25 * final_gains if final_gains > 0 else 0
+            final_value_after_tax = final_portfolio_nominal - final_tax
+
+            c1, c2 = st.columns(2)
+            with c1:
+                st.metric(
+                    "Projected Nominal Value",
+                    f"₪{final_portfolio_nominal:,.2f}",
+                    help="Future value without accounting for inflation"
+                )
+                st.metric(
+                    "Total Invested",
+                    f"₪{total_future_invested:,.2f}",
+                    help="Current portfolio plus all future contributions"
+                )
+            with c2:
+                st.metric(
+                    "Projected Real Value",
+                    f"₪{final_portfolio_real:,.2f}",
+                    help="Future value adjusted for inflation"
+                )
+                st.metric(
+                    "After Tax Value",
+                    f"₪{final_value_after_tax:,.2f}",
+                    help="Nominal value after 25% capital gains tax on profits"
+                )
 
 if not st.session_state.data.empty:
     with st.expander("📋 View Full Data Table"):
